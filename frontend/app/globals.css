@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(17, 24, 39);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(55, 65, 81);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(75, 85, 99);
+}
+
+/* Waveform visualization */
+.waveform-bar {
+  @apply bg-vibe-500 rounded-sm;
+  animation: waveform 0.5s ease-in-out infinite;
+}
+
+.waveform-bar:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.waveform-bar:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.waveform-bar:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.waveform-bar:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+/* Key badge colors */
+.key-badge {
+  @apply px-2 py-0.5 rounded text-xs font-medium;
+}
+
+.key-badge-a {
+  @apply bg-beat-900 text-beat-200;
+}
+
+.key-badge-b {
+  @apply bg-vibe-900 text-vibe-200;
+}
+
+/* Energy level indicators */
+.energy-low {
+  @apply bg-green-500;
+}
+
+.energy-mid {
+  @apply bg-yellow-500;
+}
+
+.energy-high {
+  @apply bg-red-500;
+}

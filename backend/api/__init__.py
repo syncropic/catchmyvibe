@@ -1,0 +1,1 @@
+"""CatchMyVibe API package."""
