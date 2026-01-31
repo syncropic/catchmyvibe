@@ -54,7 +54,7 @@ async def spotify_login(
     state = secrets.token_urlsafe(32)
     oauth_states[state] = {
         "created_at": datetime.now(timezone.utc),
-        "redirect_uri": redirect_uri or "http://localhost:3000/settings",
+        "redirect_uri": redirect_uri or "http://127.0.0.1:3000/import",
     }
 
     # Build authorization URL

@@ -66,7 +66,7 @@ class Settings(BaseSettings):
 
     # API Settings
     api_prefix: str = "/api"
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8000", "http://127.0.0.1:3000", "http://127.0.0.1:8000"]
 
     # Auth (for future use)
     jwt_secret: str = "your-secret-key-change-in-production"
