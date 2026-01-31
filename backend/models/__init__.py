@@ -4,6 +4,7 @@ from models.base import Base
 from models.track import Track, CuePoint, SourceLink, TrackSource
 from models.playlist import Playlist, PlaylistTrack
 from models.session import DJSession, SessionTrack
+from models.auth import StreamingServiceToken
 
 __all__ = [
     "Base",
@@ -15,4 +16,5 @@ __all__ = [
     "PlaylistTrack",
     "DJSession",
     "SessionTrack",
+    "StreamingServiceToken",
 ]

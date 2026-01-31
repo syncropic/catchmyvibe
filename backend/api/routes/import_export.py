@@ -4,10 +4,12 @@ from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.database import get_session
 from api.schemas import ImportJobCreate, ImportJobResponse
+from models import StreamingServiceToken
 
 router = APIRouter(prefix="/import", tags=["import"])
 
@@ -76,13 +78,104 @@ async def import_serato(
     return ImportJobResponse(**import_jobs[job_id])
 
 
+@router.post("/spotify/liked-songs")
+async def sync_spotify_liked_songs(
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Sync liked songs from connected Spotify account.
+
+    Requires Spotify to be connected via OAuth first.
+    """
+    from api.routes.auth import get_active_spotify_token
+    from ingest.spotify_sync import SpotifySyncService, start_spotify_sync, sync_jobs
+
+    # Get active Spotify token
+    token = await get_active_spotify_token(session)
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Spotify not connected. Please connect your Spotify account first via /api/auth/spotify/login"
+        )
+
+    # Check if token needs refresh
+    if token.is_expired():
+        raise HTTPException(
+            status_code=401,
+            detail="Spotify token expired. Please reconnect via /api/auth/spotify/login"
+        )
+
+    # Start sync job
+    job_id = str(uuid4())
+
+    # Initialize progress tracking
+    from ingest.spotify_sync import SyncProgress
+    sync_jobs[job_id] = SyncProgress(
+        job_id=job_id,
+        status="pending",
+    )
+
+    # Get total count first
+    service = SpotifySyncService(token.access_token)
+    try:
+        total_count = await service.get_liked_songs_count()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch Spotify library: {str(e)}")
+
+    sync_jobs[job_id].total_tracks = total_count
+
+    # Start sync in background
+    import asyncio
+    asyncio.create_task(
+        service.sync_liked_songs(session, token, job_id)
+    )
+
+    return {
+        "job_id": job_id,
+        "status": "started",
+        "total_tracks": total_count,
+        "message": f"Started syncing {total_count} liked songs from Spotify",
+    }
+
+
+@router.get("/spotify/liked-songs/status/{job_id}")
+async def get_spotify_sync_status(job_id: str) -> dict:
+    """Get status of a Spotify sync job."""
+    from ingest.spotify_sync import get_sync_progress
+
+    progress = get_sync_progress(job_id)
+    if not progress:
+        raise HTTPException(status_code=404, detail="Sync job not found")
+
+    return {
+        "job_id": progress.job_id,
+        "status": progress.status,
+        "total_tracks": progress.total_tracks,
+        "processed_tracks": progress.processed_tracks,
+        "new_tracks": progress.new_tracks,
+        "updated_tracks": progress.updated_tracks,
+        "skipped_tracks": progress.skipped_tracks,
+        "failed_tracks": progress.failed_tracks,
+        "progress_percent": round(
+            (progress.processed_tracks / progress.total_tracks * 100)
+            if progress.total_tracks > 0 else 0,
+            1
+        ),
+        "error_message": progress.error_message,
+        "started_at": progress.started_at.isoformat() if progress.started_at else None,
+        "completed_at": progress.completed_at.isoformat() if progress.completed_at else None,
+    }
+
+
 @router.post("/spotify/sync", response_model=ImportJobResponse)
-async def sync_spotify_library(
+async def sync_spotify_library_legacy(
     background_tasks: BackgroundTasks,
     access_token: str,
     session: AsyncSession = Depends(get_session),
 ) -> ImportJobResponse:
-    """Sync Spotify saved tracks and playlists (metadata only)."""
+    """Legacy endpoint: Sync Spotify with access token.
+
+    Prefer using /spotify/liked-songs with OAuth connection instead.
+    """
     job_id = str(uuid4())
     import_jobs[job_id] = {
         "id": job_id,

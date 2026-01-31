@@ -10,6 +10,7 @@ from api.config import get_settings
 from api.database import close_db, init_db
 from api.routes import (
     analysis_router,
+    auth_router,
     import_router,
     playlists_router,
     sessions_router,
@@ -54,6 +55,7 @@ app.include_router(playlists_router, prefix=settings.api_prefix)
 app.include_router(sessions_router, prefix=settings.api_prefix)
 app.include_router(import_router, prefix=settings.api_prefix)
 app.include_router(analysis_router, prefix=settings.api_prefix)
+app.include_router(auth_router, prefix=settings.api_prefix)
 
 
 @app.get("/")

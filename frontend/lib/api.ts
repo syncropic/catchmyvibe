@@ -153,6 +153,54 @@ export const api = {
     const { data } = await client.post('/analysis/enrich', { track_ids: trackIds })
     return data
   },
+
+  // Spotify Auth
+  async getSpotifyStatus(): Promise<SpotifyStatus> {
+    const { data } = await client.get('/auth/spotify/status')
+    return data
+  },
+
+  async disconnectSpotify(): Promise<void> {
+    await client.post('/auth/spotify/disconnect')
+  },
+
+  async syncSpotifyLikedSongs(): Promise<{ job_id: string; total_tracks: number }> {
+    const { data } = await client.post('/import/spotify/liked-songs')
+    return data
+  },
+
+  async getSpotifySyncStatus(jobId: string): Promise<SpotifySyncStatus> {
+    const { data } = await client.get(`/import/spotify/liked-songs/status/${jobId}`)
+    return data
+  },
+}
+
+// Spotify types
+export interface SpotifyStatus {
+  connected: boolean
+  user: {
+    id: string
+    email: string
+    name: string
+  } | null
+  last_sync: string | null
+  tracks_synced: number
+  is_expired: boolean
+}
+
+export interface SpotifySyncStatus {
+  job_id: string
+  status: 'pending' | 'syncing' | 'completed' | 'failed'
+  total_tracks: number
+  processed_tracks: number
+  new_tracks: number
+  updated_tracks: number
+  skipped_tracks: number
+  failed_tracks: number
+  progress_percent: number
+  error_message: string | null
+  started_at: string | null
+  completed_at: string | null
 }
 
 // Helper functions
